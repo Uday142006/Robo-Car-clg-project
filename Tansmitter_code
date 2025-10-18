@@ -1,0 +1,41 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+#define CE_PIN 7
+#define CSN_PIN 8
+
+RF24 radio(CE_PIN, CSN_PIN);
+
+// Unique address for communication
+const byte address[6] = "00001";
+
+struct JoystickData {
+  int xAxis;
+  int yAxis;
+};
+
+JoystickData joystickData;
+
+void setup() {
+  Serial.begin(9600);
+  radio.begin();
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.stopListening();
+}
+
+void loop() {
+  joystickData.xAxis = analogRead(A0); // Joystick X-axis connected to A0
+  joystickData.yAxis = analogRead(A1); // Joystick Y-axis connected to A1
+
+  // Send joystick data structure
+  bool success = radio.write(&joystickData, sizeof(joystickData));
+
+  Serial.print("X: ");
+  Serial.print(joystickData.xAxis);
+  Serial.print(" | Y: ");
+  Serial.println(joystickData.yAxis);
+
+  delay(50);
+}

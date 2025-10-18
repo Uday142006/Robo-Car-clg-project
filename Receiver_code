@@ -1,0 +1,102 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <Servo.h>
+
+#define CE_PIN 7
+#define CSN_PIN 8
+
+RF24 radio(CE_PIN, CSN_PIN);
+
+const byte address[6] = "00001";
+
+struct JoystickData {
+  int xAxis;
+  int yAxis;
+};
+
+JoystickData joystickData;
+
+Servo steeringServo;
+
+// Motor pins connected to L298N
+const int motor1Pin1 = 2; // IN1
+const int motor1Pin2 = 3; // IN2
+const int motor2Pin1 = 4; // IN3
+const int motor2Pin2 = 5; // IN4
+
+void setup() {
+  Serial.begin(9600);
+
+  // Motor pins as outputs
+  pinMode(motor1Pin1, OUTPUT);
+  pinMode(motor1Pin2, OUTPUT);
+  pinMode(motor2Pin1, OUTPUT);
+  pinMode(motor2Pin2, OUTPUT);
+
+  steeringServo.attach(9); // Servo control pin
+
+  radio.begin();
+  radio.openReadingPipe(0, address);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.startListening();
+}
+
+void loop() {
+  if (radio.available()) {
+    radio.read(&joystickData, sizeof(joystickData));
+
+    Serial.print("Received X: ");
+    Serial.print(joystickData.xAxis);
+    Serial.print(" Y: ");
+    Serial.println(joystickData.yAxis);
+
+    controlMotorsAndServo(joystickData.xAxis, joystickData.yAxis);
+  }
+}
+
+void controlMotorsAndServo(int xValue, int yValue) {
+  // Map joystick Y (forward/backward) to motor direction and speed
+  int threshold = 50;  // Dead zone threshold
+  int speed;
+
+  // Motor forward/backward control
+  if (yValue > 512 + threshold) {
+    // Forward
+    speed = map(yValue, 512 + threshold, 1023, 0, 255);
+    motorForward(speed);
+  } else if (yValue < 512 - threshold) {
+    // Backward
+    speed = map(yValue, 512 - threshold, 0, 0, 255);
+    motorBackward(speed);
+  } else {
+    // Stop motors
+    motorStop();
+  }
+
+  // Servo control for steering with joystick X axis
+  // Map analog 0-1023 to servo range 0-180 degrees
+  int servoAngle = map(xValue, 0, 1023, 0, 180);
+  steeringServo.write(servoAngle);
+}
+
+void motorForward(int speed) {
+  analogWrite(motor1Pin1, speed);
+  analogWrite(motor1Pin2, 0);
+  analogWrite(motor2Pin1, speed);
+  analogWrite(motor2Pin2, 0);
+}
+
+void motorBackward(int speed) {
+  analogWrite(motor1Pin1, 0);
+  analogWrite(motor1Pin2, speed);
+  analogWrite(motor2Pin1, 0);
+  analogWrite(motor2Pin2, speed);
+}
+
+void motorStop() {
+  analogWrite(motor1Pin1, 0);
+  analogWrite(motor1Pin2, 0);
+  analogWrite(motor2Pin1, 0);
+  analogWrite(motor2Pin2, 0);
+}
