@@ -19,8 +19,8 @@
 🛠️ Hardware Components
 🎯 Essential Components
 Component	Quantity	Purpose
-🖥️ Arduino Nano boards	2x	Brain of transmitter & receiver
-📡 nRF24L01 wireless modules	2x	Wireless communication (PA+LNA recommended)
+**🖥️ Arduino Nano boards	2x	Brain of transmitter & receiver
+**📡 nRF24L01 wireless modules	2x	Wireless communication (PA+LNA recommended)
 🕹️ Double joystick module	1x	X and Y axis control
 🚗 L298N motor driver	1x	Motor control powerhouse
 ⚙️ DC motors	2x	6V-12V drive motors
